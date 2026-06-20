@@ -1,0 +1,59 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: true
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        uv sync
+
+    - name: Run Layer Tests
+      run: uv run pytest tests/test_layers.py -v --tb=short
+
+    - name: Run Model Tests
+      run: uv run pytest tests/test_models.py -v --tb=short
+
+    - name: Run Loss Function Tests
+      run: uv run pytest tests/test_loss_fn.py -v --tb=short
+
+    - name: Run Optimizer Tests
+      run: uv run pytest tests/test_optim.py -v --tb=short
+
+    - name: Run Trainer Tests
+      run: uv run pytest tests/test_trainer.py -v --tb=short
+
+    - name: Run Compiler Tests
+      run: uv run pytest tests/test_compiler.py -v --tb=short
+
+    - name: Run Visualization Tests
+      run: uv run pytest tests/test_visualization.py -v --tb=short
+
+    - name: Run Lint & Type Check
+      run: |
+        uv run black --check .
+        uv run isort --check-only .
+        uv run flake8 .
+        uv run mypy .
