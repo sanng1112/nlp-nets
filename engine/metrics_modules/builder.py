@@ -3,6 +3,7 @@ Metrics builder — automatically constructs evaluation metrics based on task ty
 """
 
 import torch
+import torchmetrics
 from torchmetrics import MetricCollection
 
 

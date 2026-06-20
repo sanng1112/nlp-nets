@@ -20,20 +20,25 @@ class MaskedLanguageModelingLoss(BaseCriteria):
         opts: Configuration object.
     """
 
-    def __init__(self, opts: Any) -> None:
+    def __init__(self, opts: Any = None) -> None:
         super().__init__(opts)
 
     def forward(
         self,
-        input_sample: Any,
-        prediction: Tensor,
-        target: Tensor,
+        input_sample: Any = None,
+        prediction: Tensor = None,
+        target: Tensor = None,
         *args,
         **kwargs,
     ) -> Tensor:
+        flat_pred = prediction.view(-1, prediction.size(-1))
+        flat_target = target.view(-1)
+        # Return 0 if all targets are ignored
+        if (flat_target == -100).all():
+            return torch.tensor(0.0, device=prediction.device, dtype=prediction.dtype)
         loss = F.cross_entropy(
-            prediction.view(-1, prediction.size(-1)),
-            target.view(-1),
+            flat_pred,
+            flat_target,
             ignore_index=-100,
         )
         return loss

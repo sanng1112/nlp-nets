@@ -37,6 +37,9 @@ dependencies = [
     "datasets>=2.12.0",
     "tokenizers>=0.13.0",
     "wandb>=0.15.0",
+    "omegaconf>=2.3.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
 ]
 
 [project.optional-dependencies]

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "read-in-cwd",
+      "query-git-log"
+    ],
+    "deny": [],
+    "ask": [],
+    "defaultMode": "askAll"
+  }
+}

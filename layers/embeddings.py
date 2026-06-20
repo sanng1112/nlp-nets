@@ -113,8 +113,9 @@ class BERTEmbeddings(BaseNLPLayer):
         token_emb = self.token(input_ids)
 
         pos_emb = self.position(seq_len, input_ids.device)
+
         if position_ids is not None:
-            pos_emb = self.embedding(position_ids)
+            pos_emb = self.position.embedding(position_ids)
 
         if token_type_ids is None:
             token_type_ids = torch.zeros_like(input_ids)

@@ -19,27 +19,38 @@ class CrossEntropyLoss(BaseCriteria):
     Cross-Entropy Loss with optional label smoothing and ignore_index.
 
     Args:
-        opts: Configuration object.
+        opts: Configuration object or dict of options. May contain
+            ``num_classes``, ``ignore_index``, and ``label_smoothing`` keys.
         ignore_index: Index to ignore in the target (default: -100).
         label_smoothing: Label smoothing factor (default: 0.0).
     """
 
-    def __init__(self, opts: Any, ignore_index: int = -100, label_smoothing: float = 0.0) -> None:
+    def __init__(self, opts: Any = None, ignore_index: int = -100, label_smoothing: float = 0.0) -> None:
         super().__init__(opts)
-        self.ignore_index = ignore_index
-        self.label_smoothing = label_smoothing
+        if isinstance(opts, dict):
+            self.ignore_index = opts.get("ignore_index", ignore_index)
+            self.label_smoothing = opts.get("label_smoothing", label_smoothing)
+        else:
+            self.ignore_index = ignore_index
+            self.label_smoothing = label_smoothing
 
     def forward(
         self,
-        input_sample: Any,
-        prediction: Tensor,
-        target: Tensor,
+        input_sample: Any = None,
+        prediction: Tensor = None,
+        target: Tensor = None,
         *args,
         **kwargs,
     ) -> Tensor:
+        vocab_size = prediction.size(-1)
+        flat_pred = prediction.view(-1, vocab_size)
+        flat_target = target.view(-1)
+        # Return 0 if all targets are ignored
+        if (flat_target == self.ignore_index).all():
+            return torch.tensor(0.0, device=prediction.device, dtype=prediction.dtype)
         return F.cross_entropy(
-            prediction.view(-1, prediction.size(-1)),
-            target.view(-1),
+            flat_pred,
+            flat_target,
             ignore_index=self.ignore_index,
             label_smoothing=self.label_smoothing,
         )
@@ -60,14 +71,14 @@ class MLMLoss(BaseCriteria):
         opts: Configuration object.
     """
 
-    def __init__(self, opts: Any) -> None:
+    def __init__(self, opts: Any = None) -> None:
         super().__init__(opts)
 
     def forward(
         self,
-        input_sample: Any,
-        prediction: Tensor,
-        target: Tensor,
+        input_sample: Any = None,
+        prediction: Tensor = None,
+        target: Tensor = None,
         *args,
         **kwargs,
     ) -> Tensor:

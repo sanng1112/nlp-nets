@@ -79,7 +79,7 @@ def main() -> None:
     logger.log(f"Total parameters: {total_params:,} | Trainable: {trainable_params:,}")
 
     # Build tokenizer
-    from tokenizers.builder import build_tokenizer
+    from tokenizer_factory.builder import build_tokenizer
     tokenizer = build_tokenizer(opts)
 
     # Build dataloaders
