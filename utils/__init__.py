@@ -3,3 +3,6 @@ from utils.seed import set_seed
 from utils.registry import Registry
 from utils.import_utils import import_modules_from_folder
 from utils.config_helper import get_param, load_config
+
+# Re-export config module classes for convenience
+from config import ConfigResolver, ConfigSchema, ConfigValidationError

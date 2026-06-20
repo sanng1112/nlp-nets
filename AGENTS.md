@@ -6,9 +6,12 @@
 nlp-nets/
 ├── main.py                  # CLI entry point → YAML config → train/eval
 ├── configs/                 # YAML experiment configuration files
-│   ├── __init__.py
 │   ├── demo.yaml            # Full training config example
 │   └── compiler_example.yaml# Compilation pipeline config example
+├── config/                  # Configuration system (shared standard with cv-nets)
+│   ├── resolver.py          # ConfigResolver — dotted-path access, deep merge, export
+│   ├── schema.py            # ConfigSchema — model/train/optim validation
+│   └── __init__.py          # Public API: ConfigResolver, ConfigSchema, ConfigValidationError
 ├── models/                  # Model definitions (BERT, GPT, T5)
 │   ├── base_model.py        # Abstract base class for all models
 │   ├── builder.py           # YAML-to-model factory
@@ -61,7 +64,7 @@ nlp-nets/
 │   ├── registry.py          # Generic Registry pattern (decorator-based)
 │   ├── logger.py            # Logger factory (console + file)
 │   ├── seed.py              # Global random seed for reproducibility
-│   ├── config_helper.py     # YAML/argparse config utilities
+│   ├── config_helper.py     # YAML/argparse config utilities (legacy wrapper for ``config`` module)
 │   ├── import_utils.py      # Lazy import helpers
 │   └── tokenizer_utils.py   # Tokenizer helper functions
 ├── tests/                   # pytest test suite

@@ -1,8 +1,27 @@
-import os
-import argparse
-from typing import Any, Optional, Dict, Tuple
+"""
+Config helpers — backward-compatible re-exports from the ``config`` module.
 
-import yaml
+This file maintains the legacy API for existing imports while delegating
+to the shared ``config`` module (``ConfigResolver``, ``ConfigSchema``).
+New code should import directly from ``config``:
+
+    from config import ConfigResolver, ConfigSchema
+
+Available legacy exports:
+    - ``get_param(opts, explicit_val, attr_name, default_val)``
+    - ``load_config(config_path)``
+    - ``parse_arguments()``
+"""
+
+import argparse
+from typing import Any, Dict, Optional, Tuple
+
+from config import ConfigResolver, ConfigSchema
+
+
+# ---------------------------------------------------------------------------
+# Legacy API  —  maintained for backward compatibility
+# ---------------------------------------------------------------------------
 
 
 def get_param(
@@ -14,6 +33,8 @@ def get_param(
     """
     Generic parameter retrieval with priority:
     Explicit value > opts dict value > default value.
+
+    Supports nested keys like ``"model.name"``.
     """
     if explicit_val is not None:
         return explicit_val
@@ -28,6 +49,17 @@ def get_param(
                 return default_val
         return val if val is not None else default_val
     return default_val
+
+
+def load_config(config_path: str) -> Dict[str, Any]:
+    """
+    Load a YAML configuration file and return the raw dict.
+
+    This is a thin wrapper around ``ConfigResolver`` for backward
+    compatibility.  New code should use ``ConfigResolver.load_config()``.
+    """
+    resolver = ConfigResolver.load_config(config_path)
+    return resolver.to_dict()
 
 
 def parse_arguments() -> Tuple[argparse.Namespace, Dict[str, Any]]:
@@ -76,40 +108,3 @@ def parse_arguments() -> Tuple[argparse.Namespace, Dict[str, Any]]:
     }
 
     return args, opts
-
-
-def load_config(config_path: str) -> Dict[str, Any]:
-    """
-    Load a YAML configuration file.
-
-    Args:
-        config_path: Path to YAML config file.
-
-    Returns:
-        Dict with configuration values.
-    """
-    if not os.path.isfile(config_path):
-        raise FileNotFoundError(f"Configuration file not found: {config_path}")
-
-    with open(config_path, "r", encoding="utf-8") as f:
-        config = yaml.safe_load(f)
-
-    if config is None:
-        config = {}
-
-    # Resolve ${ENV_VAR} placeholders
-    def _resolve_env(value: Any) -> Any:
-        if isinstance(value, str) and value.startswith("${") and value.endswith("}"):
-            env_var = value[2:-1]
-            return os.environ.get(env_var, value)
-        return value
-
-    def _deep_resolve(obj: Any) -> Any:
-        if isinstance(obj, dict):
-            return {k: _deep_resolve(v) for k, v in obj.items()}
-        if isinstance(obj, list):
-            return [_deep_resolve(v) for v in obj]
-        return _resolve_env(obj)
-
-    config = _deep_resolve(config)
-    return config
