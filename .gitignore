@@ -1,6 +1,6 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
-*.py[cod]
+*.py[codz]
 *$py.class
 
 # C extensions
@@ -176,3 +176,38 @@ logs/
 
 # Config local overrides
 configs/local/
+
+# Ruff linter cache
+.ruff_cache/
+
+# Temporary files
+tempCodeRunnerFile.py
+
+# Dataset files
+/dataset/
+
+# Demo files
+demo/
+
+# Paper PDFs
+paper/*.pdf
+paper/*.md
+papers/*.pdf
+papers/*.md
+
+# Checkpoints & model weights
+checkpoints/
+checkpoints_*/
+temp_checkpoints/
+
+# Data directories
+data/
+
+# Notebook heavy output
+*.ipynb
+
+# Agent config
+.anng/
+
+# Streamlit secrets
+.streamlit/secrets.toml
