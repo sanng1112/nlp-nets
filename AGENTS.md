@@ -6,22 +6,74 @@
 nlp-nets/
 ├── main.py                  # CLI entry point → YAML config → train/eval
 ├── configs/                 # YAML experiment configuration files
+│   ├── __init__.py
+│   ├── demo.yaml            # Full training config example
+│   └── compiler_example.yaml# Compilation pipeline config example
 ├── models/                  # Model definitions (BERT, GPT, T5)
+│   ├── base_model.py        # Abstract base class for all models
+│   ├── builder.py           # YAML-to-model factory
 │   └── transformers/        # Transformer architectures
-├── layers/                  # Pluggable building blocks (attention, FFN, embeddings)
-├── loss_fn/                 # Loss functions (cross-entropy, MLM, etc.)
+│       ├── bert.py          # BERT (encoder-only)
+│       ├── gpt.py           # GPT (decoder-only, causal LM)
+│       └── t5.py            # T5 (encoder-decoder)
+├── layers/                  # Pluggable building blocks
+│   ├── base_layer.py        # Base class for all layers
+│   ├── attention.py         # Multi-head & self-attention
+│   ├── embeddings.py        # Token, positional, segment embeddings
+│   ├── feedforward.py       # Position-wise FFN & gated FFN
+│   ├── normalization.py     # LayerNorm & RMSLayerNorm
+│   └── positional_encoding.py # Sinusoidal, learnable, RoPE, ALiBi
+├── loss_fn/                 # Loss functions
+│   ├── base_criteria.py     # Base criteria class
+│   ├── cross_entropy.py     # Cross-entropy with label smoothing
+│   └── mlm_loss.py          # Masked language modeling loss
 ├── optim/                   # Optimizer & LR scheduler builders
-├── engine/                  # Training loop, data factory, sanity check
+│   ├── optimizer_builder.py # AdamW, SGD with configurable params
+│   └── scheduler_builder.py # Warmup, cosine, linear, polynomial
+├── engine/                  # Training loop, data, inference, utilities
+│   ├── trainer.py           # Full training loop with logging
+│   ├── data_factory.py      # Dataset creation from YAML config
+│   ├── inference.py         # Text generation pipeline
+│   ├── sanity_check.py      # Dry-run for OOM/shape/gradient check
+│   ├── ema.py               # Exponential Moving Average (from cv-nets)
+│   ├── loggers.py           # CSVLogger for training metrics
 │   └── metrics_modules/     # Metric collections (PPL, accuracy, F1)
+│       └── builder.py       # torchmetrics-based metric factory
 ├── data/                    # Dataset definitions & collators
+│   ├── datasets.py          # TextClassificationDataset, MaskedLMDataset, etc.
+│   └── collator.py          # NLP collation utilities (dynamic padding)
 ├── tokenizer_factory/       # Tokenizer builder (HuggingFace, WordPiece, BPE)
+│   ├── builder.py           # Factory selecting backend from config
+│   └── __init__.py          # Public API
+├── compiler/                # Model compilation & optimization
+│   ├── base_compiler.py     # Abstract compiler interface
+│   ├── builder.py           # Factory: selects backend from config
+│   ├── torchscript_compiler.py # TorchScript tracing/scripting
+│   ├── onnx_compiler.py     # ONNX export (dynamic axes support)
+│   ├── torch_compile_compiler.py # torch.compile graph optimization
+│   └── quantizer.py         # Dynamic/static/fp16 post-training quantization
 ├── visualization/           # Post-training model inspection & plotting
-│   ├── weight_visualizer    # Weight distribution histograms & heatmaps
-│   ├── gradient_visualizer  # Gradient distribution & flow tracking
-│   ├── attention_visualizer # Attention head patterns & entropy
-│   └── model_viewer         # High-level combined inspection API
+│   ├── model_viewer.py      # High-level combined inspection API
+│   ├── weight_visualizer.py # Weight distribution histograms & heatmaps
+│   ├── gradient_visualizer.py # Gradient distribution & flow tracking
+│   └── attention_visualizer.py # Attention head patterns & entropy
 ├── utils/                   # Registry, logger, seed, config helpers
-└── tests/                   # pytest test suite
+│   ├── registry.py          # Generic Registry pattern (decorator-based)
+│   ├── logger.py            # Logger factory (console + file)
+│   ├── seed.py              # Global random seed for reproducibility
+│   ├── config_helper.py     # YAML/argparse config utilities
+│   ├── import_utils.py      # Lazy import helpers
+│   └── tokenizer_utils.py   # Tokenizer helper functions
+├── tests/                   # pytest test suite
+│   ├── test_layers.py       # Layer unit tests
+│   ├── test_models.py       # Model integration tests
+│   ├── test_trainer.py      # Trainer regression tests
+│   ├── test_loss_fn.py      # Loss function tests
+│   ├── test_optim.py        # Optimizer & scheduler tests
+│   ├── test_compiler.py     # Compilation pipeline tests
+│   └── test_visualization.py# Visualizer output tests
+└── .github/workflows/       # CI pipeline (from cv-nets)
+    └── ci.yml               # GitHub Actions: test across 3.10-3.12
 ```
 
 All source code lives under the project root. YAML configs in `configs/` drive experiments. Tests mirror the structure of `tests/`.
@@ -40,6 +92,8 @@ All source code lives under the project root. YAML configs in `configs/` drive e
 | `python -c "from visualization import ModelViewer; v.summary_report('report.txt')"` | Generate parameter statistics report |
 | `pytest tests/ -v` | Run the full test suite verbosely |
 | `pytest tests/test_layers.py -v` | Run a single test file |
+| `python -c "from compiler.builder import build_compiler; ..."` | Compile an NLP model using the compiler module |
+| `python main.py --common.config-file configs/compiler_example.yaml --common.sanity-check` | Dry-run compilation pipeline without model weights |
 
 **Formatting & linting** (defined in `pyproject.toml`):
 
@@ -158,4 +212,45 @@ viewer.inspect_weights("heatmap", layer_name="fc1")  # single weight matrix heat
 viewer.summary_report("report.txt")           # text statistics report
 viewer.inspect_gradients("flow")              # gradient magnitude across layers
 viewer.inspect_attention(attn, "entropy")     # attention head confidence
+```
+
+---
+
+## Model Compilation & Optimization
+
+The `compiler/` package provides tools to compile, quantize, and export trained models for production inference:
+
+| Component | API | Purpose |
+|---|---|---|
+| `TorchScriptCompiler` | `compiler.compile(mode="trace", example_input=x)` | Trace/script models via `torch.jit` for deployment |
+| `ONNXCompiler` | `compiler.compile(example_input=x)` | Export to ONNX for cross-platform (CPU/GPU/mobile) inference |
+| `TorchCompileCompiler` | `compiler.compile()` | Apply `torch.compile` (PyTorch 2.0+) graph optimization |
+| `Quantizer` | `quantizer.quantize(mode="dynamic")` | Reduce precision: dynamic/static quantization or fp16 conversion |
+| `build_compiler` | `compiler = build_compiler(opts, model)` | Factory function selecting backend from config |
+
+```python
+from compiler import build_compiler
+
+# Build from config (backend selected by opts["compiler"]["backend"])
+compiler = build_compiler(opts, model)
+
+# Compile with an example input
+compiler.compile(example_input=torch.randint(0, 100, (1, 64)))
+
+# Save the artifact
+compiler.save("compiled_model.onnx")
+```
+
+**Config-driven compilation** (see `configs/compiler_example.yaml`):
+
+```yaml
+compiler:
+  backend: "onnx"              # torchscript | onnx | torch_compile | quantize
+  onnx:
+    opset_version: 17
+    input_names: ["input_ids", "attention_mask"]
+    output_names: ["logits"]
+    dynamic_axes:
+      0: "batch_size"
+      1: "seq_length"
 ```
