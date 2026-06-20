@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "nlp-nets"
@@ -63,7 +63,7 @@ docs = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["nlp-nets*"]
+include = ["layers*", "models*", "engine*", "config*", "blocks*", "loss_fn*", "optim*", "compiler*", "data*", "utils*", "tokenizer_factory*", "visualization*"]
 
 [tool.black]
 line-length = 120
