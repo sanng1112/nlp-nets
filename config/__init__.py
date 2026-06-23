@@ -1,5 +1,5 @@
 """
-Configuration module — shared standard with cv-nets.
+Configuration module for nlp-nets.
 
 Provides:
 - ``ConfigResolver``: dotted-key access to nested config dicts.

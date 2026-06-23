@@ -6,7 +6,7 @@ Supports construction from a YAML file path, a plain ``dict``, a
 read-only access through dotted-key notation as well as export
 to dictionary, namespace, or YAML file.
 
-This is the shared standard — kept in sync with cv-nets' config module.
+This module is part of the nlp-nets configuration system.
 """
 
 from __future__ import annotations

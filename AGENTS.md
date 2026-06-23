@@ -8,7 +8,7 @@ nlp-nets/
 ├── configs/                 # YAML experiment configuration files
 │   ├── demo.yaml            # Full training config example
 │   └── compiler_example.yaml# Compilation pipeline config example
-├── config/                  # Configuration system (shared standard with cv-nets)
+├── config/                  # Configuration system (YAML resolver, schema)
 │   ├── resolver.py          # ConfigResolver — dotted-path access, deep merge, export
 │   ├── schema.py            # ConfigSchema — model/train/optim validation
 │   └── __init__.py          # Public API: ConfigResolver, ConfigSchema, ConfigValidationError
@@ -38,7 +38,7 @@ nlp-nets/
 │   ├── data_factory.py      # Dataset creation from YAML config
 │   ├── inference.py         # Text generation pipeline
 │   ├── sanity_check.py      # Dry-run for OOM/shape/gradient check
-│   ├── ema.py               # Exponential Moving Average (from cv-nets)
+│   ├── ema.py               # Exponential Moving Average
 │   ├── loggers.py           # CSVLogger for training metrics
 │   └── metrics_modules/     # Metric collections (PPL, accuracy, F1)
 │       └── builder.py       # torchmetrics-based metric factory
@@ -75,7 +75,7 @@ nlp-nets/
 │   ├── test_optim.py        # Optimizer & scheduler tests
 │   ├── test_compiler.py     # Compilation pipeline tests
 │   └── test_visualization.py# Visualizer output tests
-└── .github/workflows/       # CI pipeline (from cv-nets)
+└── .github/workflows/       # CI pipeline
     └── ci.yml               # GitHub Actions: test across 3.10-3.12
 ```
 

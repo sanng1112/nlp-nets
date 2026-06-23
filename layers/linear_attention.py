@@ -116,11 +116,16 @@ class LinearAttention(BaseNLPLayer):
         if attention_mask is not None:
             # attention_mask: (B, 1, 1, N) or (B, 1, N, N) with -inf for masked positions
             if attention_mask.dim() == 4 and attention_mask.size(-2) != 1:
-                # Full mask — use it to zero out future keys in the feature space
+                # Full mask (B, 1, N, N) — reduce to key-level visibility
+                # A key is visible if ANY query can attend to it
                 causal_mask = (attention_mask == 0.0).float()  # 1 for visible, 0 for masked
-                key_f = key_f * causal_mask[:, :, -key_f.size(-2):, :]
+                # causal_mask: (B, 1, N, N), max over query dim → (B, 1, 1, N)
+                # transpose → (B, 1, N, 1) to broadcast with (B, H, N, D/H)
+                key_mask = causal_mask.max(dim=-2, keepdim=True).values  # (B, 1, 1, N)
+                key_mask = key_mask.transpose(-2, -1)  # (B, 1, N, 1)
+                key_f = key_f * key_mask  # (B, H, N, D/H) * (B, 1, N, 1)
             elif attention_mask.dim() == 4:
-                # Per-step mask — apply to query side
+                # Per-step mask (B, 1, 1, N) — apply to query side
                 causal_mask = (attention_mask == 0.0).float()
                 query_f = query_f * causal_mask.transpose(-2, -1)
 

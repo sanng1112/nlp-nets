@@ -8,12 +8,13 @@ representational capacity of the feature map while maintaining O(N) complexity.
 
 Core formula:
     Φ_INLA(X) = σ(X @ W_low + b_low) @ W_exp + b_exp
+    φ(X)      = ELU(Φ_INLA(X)) + 1        (positivity for linear attention)
 
     Q_hat = Φ_INLA(Q)   ∈ ℝ^{N × r}
     K_hat = Φ_INLA(K)   ∈ ℝ^{N × r}
-    V = V                 (unchanged)
+    V     = V             (unchanged)
 
-    Attention(Q, K, V) = D^{-1} · Q_hat @ (K_hat^T V)
+    Attention(Q, K, V) = D^{-1} · φ(Q_hat) @ (φ(K_hat)^T V)
 
 where:
 - d_k: bottleneck dimension (compressed)
@@ -218,11 +219,20 @@ class INLAAttention(BaseNLPLayer):
         query_f = self.q_lifting(query)
         key_f = self.k_lifting(key)
 
+        # Positivity: linear attention REQUIRES positive feature maps
+        # for stable normalization. φ(x) = ELU(x) + 1 follows the same
+        # guarantee as Katharopoulos et al. (2020).
+        query_f = F.elu(query_f) + 1.0
+        key_f = F.elu(key_f) + 1.0
+
         # Causal masking: zero out future positions' key features
         if attention_mask is not None:
             if attention_mask.dim() == 4 and attention_mask.size(-2) != 1:
+                # Full mask (B,1,N,N) -> reduce to (B,1,N,1) to broadcast with (B,H,N,r)
                 causal_mask = (attention_mask == 0.0).float()
-                key_f = key_f * causal_mask[:, :, -key_f.size(-2):, :]
+                key_mask = causal_mask.max(dim=-2, keepdim=True).values  # (B,1,1,N)
+                key_mask = key_mask.transpose(-2, -1)                 # (B,1,N,1)
+                key_f = key_f * key_mask
             elif attention_mask.dim() == 4:
                 causal_mask = (attention_mask == 0.0).float()
                 query_f = query_f * causal_mask.transpose(-2, -1)

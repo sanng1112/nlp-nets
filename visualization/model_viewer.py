@@ -8,6 +8,7 @@ convenient interface for post-training model analysis.
 from typing import Dict, List, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
+import torch
 import torch.nn as nn
 
 from visualization.attention_visualizer import AttentionVisualizer

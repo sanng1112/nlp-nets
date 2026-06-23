@@ -4,7 +4,7 @@ ConfigSchema — validation helpers for nlp-nets configuration dictionaries.
 Provides static methods that validate the structure of model and training
 configuration dicts, raising ``ConfigValidationError`` on failure.
 
-This is the shared standard — kept in sync with cv-nets' config module
+This module is part of the nlp-nets configuration system
 with NLP-specific additions.
 """
 

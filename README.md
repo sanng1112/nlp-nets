@@ -1,7 +1,7 @@
 # nlp-nets
 
 > **A modular PyTorch NLP library** for building, training, and evaluating transformer-based language models.
-> Inspired by the architecture of [ml-cvnets](https://github.com/apple/ml-cvnets) / cv-nets, but tailored for **Natural Language Processing**.
+> Inspired by the architecture of the nlp-nets library for **Natural Language Processing**.
 
 ---
 

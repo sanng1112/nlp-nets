@@ -131,8 +131,11 @@ class CosFormerAttention(BaseNLPLayer):
         # Causal masking: zero out future positions' key features
         if attention_mask is not None:
             if attention_mask.dim() == 4 and attention_mask.size(-2) != 1:
+                # Full mask (B, 1, N, N) — reduce to key-level visibility
                 causal_mask = (attention_mask == 0.0).float()
-                key_f = key_f * causal_mask[:, :, -key_f.size(-2):, :]
+                key_mask = causal_mask.max(dim=-2, keepdim=True).values  # (B, 1, 1, N)
+                key_mask = key_mask.transpose(-2, -1)  # (B, 1, N, 1)
+                key_f = key_f * key_mask  # (B, H, N, D/H) * (B, 1, N, 1)
             elif attention_mask.dim() == 4:
                 causal_mask = (attention_mask == 0.0).float()
                 query_f = query_f * causal_mask.transpose(-2, -1)
